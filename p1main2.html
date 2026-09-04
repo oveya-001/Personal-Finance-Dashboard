@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ledger — Personal Finance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#11181A;
+    --ink-2:#161E21;
+    --panel:#1B2427;
+    --panel-2:#202A2D;
+    --line: rgba(237,230,214,0.12);
+    --line-strong: rgba(237,230,214,0.24);
+    --paper:#EDE6D6;
+    --paper-dim: rgba(237,230,214,0.64);
+    --paper-faint: rgba(237,230,214,0.36);
+    --gold:#C6A15B;
+    --gold-dim: rgba(198,161,91,0.16);
+    --sage:#7FA98C;
+    --sage-dim: rgba(127,169,140,0.16);
+    --rust:#C0603A;
+    --rust-dim: rgba(192,96,58,0.16);
+    --blue:#6E8CA0;
+    --lav:#9A8FBF;
+    --radius: 4px;
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family: var(--sans);
+    color: var(--paper);
+    background-color: var(--ink);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(198,161,91,0.10), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(127,169,140,0.06), transparent 55%);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    opacity:0.035;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  a{color:inherit;}
+  ::selection{ background: var(--gold-dim); }
+  input, select, button{ font-family:inherit; }
+  input[type=text], input[type=number], input[type=date], select{
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    color: var(--paper);
+    padding: 9px 11px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    width:100%;
+  }
+  input:focus, select:focus, button:focus-visible{
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-dim);
+  }
+  label{ display:block; font-size:12px; color:var(--paper-dim); margin-bottom:5px; letter-spacing:0.02em;}
+  .field{ margin-bottom:14px; }
+  .btn{
+    background: var(--gold);
+    color: #1B1405;
+    border: none;
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition: transform .12s ease, filter .12s ease;
+  }
+  .btn:hover{ filter:brightness(1.08); }
+  .btn:active{ transform: translateY(1px); }
+  .btn.ghost{
+    background:transparent;
+    border:1px solid var(--line-strong);
+    color: var(--paper);
+  }
+  .btn.ghost:hover{ border-color: var(--gold); color:var(--gold); }
+  .btn.small{ padding:6px 12px; font-size:12.5px; }
+  .btn.danger{ background:transparent; border:1px solid var(--rust); color:var(--rust); }
+  .btn:disabled{ opacity:0.5; cursor:default; }
+
+  #app{ position:relative; z-index:1; display:flex; min-height:100vh; }
+
+  /* ---------- Onboarding ---------- */
+  #onboard{
+    min-height:100vh; width:100%; display:flex; align-items:center; justify-content:center;
+    position:relative; z-index:1; padding:24px;
+  }
+  .onboard-card{
+    width:100%; max-width:420px;
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius: 6px;
+    padding: 36px 34px;
+  }
+  .onboard-card h1{
+    font-family:var(--serif); font-weight:600; font-size:28px; margin:0 0 6px;
+  }
+  .onboard-card p.sub{ color:var(--paper-dim); font-size:14px; margin:0 0 26px; line-height:1.5;}
+  .onboard-note{
+    margin-top:18px; padding-top:16px; border-top:1px solid var(--line);
+    font-size:12.5px; color:var(--paper-faint); line-height:1.6;
+  }
+
+  /* ---------- Rail ---------- */
+  .rail{
+    width:236px; flex-shrink:0;
+    border-right:1px solid var(--line);
+    padding: 26px 20px;
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+  }
+  .brand{ margin-bottom: 34px; }
+  .brand .who{ font-family:var(--serif); font-size:21px; font-weight:600; line-height:1.25;}
+  .brand .who em{ font-style:italic; color:var(--gold); }
+  .brand .tag{ font-size:11.5px; color:var(--paper-faint); margin-top:4px; }
+  .navgroup{ margin-bottom:22px; }
+  .navgroup .glabel{
+    font-size:10.5px; letter-spacing:0.12em; color:var(--paper-faint);
+    text-transform:uppercase; margin: 0 0 8px 10px;
+  }
+  .navitem{
+    display:flex; align-items:center; gap:10px;
+    padding:8px 10px;
+    font-size:14px; color:var(--paper-dim);
+    border-left:2px solid transparent;
+    cursor:pointer; border-radius:0 3px 3px 0;
+    position:relative;
+  }
+  .navitem:hover{ color:var(--paper); background:rgba(237,230,214,0.03); }
+  .navitem.active{ color:var(--paper); border-left-color:var(--gold); background:var(--gold-dim); font-weight:600; }
+  .navbadge{
+    background:var(--rust); color:var(--paper); font-size:10.5px; font-weight:700;
+    border-radius:20px; padding:1px 6px; margin-left:auto;
+  }
+  .rail-foot{ margin-top:auto; padding-top:16px; border-top:1px solid var(--line); }
+  .rail-foot .navitem{ font-size:13px; }
+
+  /* ---------- Stage ---------- */
+  .stage{ flex:1; min-width:0; padding: 34px 44px 60px; }
+  .stage-head{
+    display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:26px; flex-wrap:wrap; gap:14px;
+  }
+  .stage-head h2{ font-family:var(--serif); font-weight:600; font-size:26px; margin:0; }
+  .stage-head .desc{ color:var(--paper-dim); font-size:13.5px; margin-top:4px; }
+  .monthnav{ display:flex; align-items:center; gap:14px; font-size:14px; }
+  .monthnav button{
+    background:none; border:1px solid var(--line-strong); color:var(--paper);
+    width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:14px; line-height:1;
+  }
+  .monthnav button:hover{ border-color:var(--gold); color:var(--gold); }
+  .monthnav .mlabel{ min-width:118px; text-align:center; font-family:var(--serif); font-size:15px; }
+
+  /* Ledger strip */
+  .ledger-strip{
+    display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; margin-bottom:30px;
+    background:var(--panel);
+  }
+  .ledger-col{ flex:1; padding:20px 26px; position:relative; }
+  .ledger-col + .ledger-col{ border-left:1px solid var(--line); }
+  .ledger-col .lbl{ font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--paper-faint); margin-bottom:8px;}
+  .ledger-col .amt{ font-family:var(--serif); font-size:30px; font-weight:600; font-variant-numeric: tabular-nums; }
+  .ledger-col.income .amt{ color:var(--sage); }
+  .ledger-col.spent .amt{ color:var(--rust); }
+  .ledger-col.remain .amt{ color:var(--gold); }
+
+  .grid2{ display:grid; grid-template-columns: 1.15fr 1fr; gap:24px; align-items:start; }
+  @media (max-width: 900px){ .grid2{ grid-template-columns:1fr; } }
+
+  .panel{
+    border:1px solid var(--line); border-radius:6px; background:var(--panel);
+    padding:22px 24px; margin-bottom:24px;
+  }
+  .panel h3{ font-family:var(--serif); font-size:16.5px; font-weight:600; margin:0 0 16px; }
+  .panel h3 .n{ color:var(--paper-faint); font-weight:400; font-size:12.5px; font-family:var(--sans); margin-left:6px;}
+
+  .barrow{ margin-bottom:13px; }
+  .barrow .brhead{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:5px; }
+  .barrow .brhead .catname{ color:var(--paper); }
+  .barrow .brhead .catval{ font-variant-numeric: tabular-nums; color:var(--paper-dim); }
+  .bartrack{ height:6px; border-radius:3px; background:var(--ink-2); overflow:hidden; }
+  .barfill{ height:100%; border-radius:3px; }
+
+  .txn-list{ list-style:none; margin:0; padding:0; }
+  .txn-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 0; border-bottom:1px solid var(--line); font-size:13.5px;
+  }
+  .txn-row:last-child{ border-bottom:none; }
+  .txn-left{ display:flex; flex-direction:column; gap:2px; }
+  .txn-cat{ color:var(--paper); }
+  .txn-note{ color:var(--paper-faint); font-size:12px; }
+  .txn-right{ display:flex; align-items:center; gap:10px; }
+  .txn-amt{ font-variant-numeric: tabular-nums; font-weight:600; }
+  .txn-amt.pos{ color:var(--sage); }
+  .txn-amt.neg{ color:var(--rust); }
+  .txn-date{ color:var(--paper-faint); font-size:11.5px; min-width:52px; text-align:right; }
+  .xbtn{ background:none; border:none; color:var(--paper-faint); cursor:pointer; font-size:15px; padding:2px 4px; }
+  .xbtn:hover{ color:var(--rust); }
+
+  .empty{
+    color:var(--paper-faint); font-size:13.5px; padding:18px 0; text-align:center; border:1px dashed var(--line-strong); border-radius:6px;
+  }
+
+  .formrow{ display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:14px; align-items:end; }
+  .formrow .field{ margin-bottom:0; }
+  .formrow .actions{ display:flex; }
+
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:20px;
+    border:1px solid var(--line-strong); font-size:12.5px; cursor:pointer; margin:0 8px 8px 0;
+  }
+  .chip input{ width:auto; }
+  .chip.checked{ border-color:var(--gold); background:var(--gold-dim); color:var(--gold); }
+
+  .pill{ display:inline-block; padding:2px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+  .pill.owe{ background:var(--rust-dim); color:var(--rust); }
+  .pill.owed{ background:var(--sage-dim); color:var(--sage); }
+  .pill.settled{ background:rgba(237,230,214,0.08); color:var(--paper-faint); }
+  .pill.pending{ background:var(--gold-dim); color:var(--gold); }
+
+  .split-card{ border:1px solid var(--line); border-radius:6px; padding:16px 18px; margin-bottom:12px; }
+  .split-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .split-title{ font-family:var(--serif); font-size:16px; font-weight:600; }
+  .split-meta{ color:var(--paper-faint); font-size:12px; margin-top:3px; }
+  .split-people{ margin-top:12px; border-top:1px solid var(--line); padding-top:12px; }
+  .split-person-row{ display:flex; justify-content:space-between; align-items:center; font-size:13.5px; padding:5px 0; }
+
+  .table{ width:100%; border-collapse:collapse; }
+  .table th{ text-align:left; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--paper-faint); padding:8px 6px; border-bottom:1px solid var(--line-strong); font-weight:600;}
+  .table td{ padding:9px 6px; border-bottom:1px solid var(--line); font-size:13.5px; }
+  .table tr:last-child td{ border-bottom:none; }
+
+  .friend-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+  .friend-row:last-child{ border-bottom:none; }
+  .avatar{
+    width:30px; height:30px; border-radius:50%; background:var(--gold-dim); color:var(--gold);
+    display:inline-flex; align-items:center; justify-content:center; font-family:var(--serif); font-weight:600; font-size:13px; margin-right:10px;
+  }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--panel-2); border:1px solid var(--gold); color:var(--paper);
+    padding:10px 18px; border-radius:5px; font-size:13.5px; z-index:50;
+    opacity:0; transition:opacity .25s ease; pointer-events:none;
+    max-width:80vw; text-align:center;
+  }
+  .toast.show{ opacity:1; }
+
+  .topline{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .subtle-btn{ background:none; border:none; color:var(--paper-faint); font-size:12.5px; cursor:pointer; text-decoration:underline; padding:0;}
+  .subtle-btn:hover{ color:var(--gold); }
+
+  .storage-warn{
+    background: var(--rust-dim); border:1px solid var(--rust); color:var(--rust);
+    padding:10px 16px; border-radius:6px; font-size:13px; margin-bottom:18px; line-height:1.5;
+  }
+  .info-note{
+    background: var(--gold-dim); border:1px solid var(--gold); color:var(--gold);
+    padding:10px 16px; border-radius:6px; font-size:13px; margin-bottom:18px; line-height:1.5;
+  }
+  .invite-box{
+    display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+    background:var(--ink-2); border:1px solid var(--line); border-radius:6px; padding:14px 16px; margin-bottom:12px;
+  }
+  .invite-box input{ flex:1; min-width:180px; background:var(--panel-2); }
+  .request-row{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); font-size:13.5px;}
+  .request-row:last-child{ border-bottom:none; }
+
+  @media (max-width: 720px){
+    #app{ flex-direction:column; }
+    .rail{ position:relative; height:auto; width:100%; border-right:none; border-bottom:1px solid var(--line);
+      flex-direction:row; align-items:center; padding:14px 16px; overflow-x:auto; gap:18px; }
+    .brand{ margin-bottom:0; white-space:nowrap; }
+    .navgroup{ display:flex; margin-bottom:0; gap:4px; }
+    .navgroup .glabel{ display:none; }
+    .navitem{ white-space:nowrap; border-left:none; border-bottom:2px solid transparent; }
+    .navitem.active{ border-left:none; border-bottom-color:var(--gold); }
+    .rail-foot{ margin-top:0; padding-top:0; border-top:none; display:flex; }
+    .stage{ padding:24px 18px 50px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="onboard" style="display:none;">
+  <div class="onboard-card">
+    <h1>Set up your <em>ledger</em></h1>
+    <p class="sub">A private space for your money, with a shared corner for splitting costs with friends.</p>
+    <div class="field">
+      <label for="ob-name">Your name</label>
+      <input type="text" id="ob-name" placeholder="e.g. Oveya" maxlength="24">
+    </div>
+    <div class="field">
+      <label for="ob-currency">Currency symbol</label>
+      <select id="ob-currency">
+        <option value="₹" selected>₹ — Indian Rupee</option>
+        <option value="$">$ — Dollar</option>
+        <option value="€">€ — Euro</option>
+        <option value="£">£ — Pound</option>
+      </select>
+    </div>
+    <button class="btn" style="width:100%;" onclick="completeOnboarding()">Open my ledger</button>
+    <div class="onboard-note">
+      Your expenses, income and budgets stay on this device alone. Friends only see the splits you share with them, and only after you've each accepted a friend request.
+    </div>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="rail">
+    <div class="brand">
+      <div class="who" id="brand-name">The <em>Ledger</em></div>
+      <div class="tag">Personal finance, kept plainly</div>
+    </div>
+    <div class="navgroup">
+      <div class="glabel">Money</div>
+      <div class="navitem" data-page="overview" onclick="goTo('overview')">Overview</div>
+      <div class="navitem" data-page="expenses" onclick="goTo('expenses')">Expenses</div>
+      <div class="navitem" data-page="income" onclick="goTo('income')">Income</div>
+      <div class="navitem" data-page="budget" onclick="goTo('budget')">Budget</div>
+    </div>
+    <div class="navgroup">
+      <div class="glabel">Together</div>
+      <div class="navitem" data-page="split" onclick="goTo('split')">Cold Split</div>
+      <div class="navitem" data-page="requests" onclick="goTo('requests')">Friend Requests<span id="req-badge"></span></div>
+      <div class="navitem" data-page="friends" onclick="goTo('friends')">Friends</div>
+    </div>
+    <div class="rail-foot">
+      <div class="navitem" data-page="settings" onclick="goTo('settings')">Settings</div>
+    </div>
+  </div>
+  <div class="stage" id="stage"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==========================================================================
+   STORAGE
+   This standalone build runs from a plain HTML file, so it uses the
+   browser's localStorage instead of the Claude-artifact-only
+   `window.storage` API. localStorage reads/writes are synchronous and
+   local to this device, so saves apply immediately — no network round
+   trip, no waiting.
+
+   Important limitation: localStorage is per-browser, per-device. Two
+   different people on two different computers each get their own,
+   separate storage. That means the friend-request / cold-split flow
+   below works correctly for one person testing across tabs, or once
+   you wire this up to a small shared backend (e.g. Firebase, Supabase,
+   or your own API) so "shared" keys actually live on a server both
+   people can reach. The code is written so that swapping the storage
+   functions below for real network calls is the only thing you'd need
+   to change — everything else (UI, state, flows) stays the same.
+   ========================================================================== */
+const LS_PREFIX = 'theLedger:';
+
+function hasStorage(){
+  try{
+    const testKey = LS_PREFIX + '__test__';
+    localStorage.setItem(testKey, '1');
+    localStorage.removeItem(testKey);
+    return true;
+  }catch(e){ return false; }
+}
+
+function lsRead(key){
+  try{
+    const raw = localStorage.getItem(LS_PREFIX + key);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function lsWrite(key, value){
+  try{
+    localStorage.setItem(LS_PREFIX + key, JSON.stringify(value));
+    return true;
+  }catch(e){ return false; }
+}
+
+/* ---------------- constants ---------------- */
+const CATS = {
+  Food: '#7FA98C',
+  Outing: '#C6A15B',
+  Movies: '#6E8CA0',
+  Shopping: '#C0603A',
+  Miscellaneous: '#9A8FBF'
+};
+const INCOME_SOURCES = ['Pocket Money','Internship / Freelance','Gift','Other'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+/* ---------------- invite helpers ---------------- */
+function getInviteParam(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const v = params.get('invite');
+    return v ? v.trim() : null;
+  }catch(e){ return null; }
+}
+function clearInviteParam(){
+  try{
+    const url = new URL(window.location.href);
+    url.searchParams.delete('invite');
+    window.history.replaceState({}, '', url.toString());
+  }catch(e){ /* ignore */ }
+}
+function inviteLink(){
+  try{
+    const url = new URL(window.location.href);
+    url.searchParams.set('invite', state.profile.name);
+    return url.toString();
+  }catch(e){ return window.location.href; }
+}
+async function copyInviteLink(){
+  const link = inviteLink();
+  try{
+    await navigator.clipboard.writeText(link);
+    toast('Invite link copied.');
+  }catch(e){
+    toast('Could not copy automatically — select the link text and copy it.');
+  }
+}
+
+let state = {
+  profile: null,          // {name, currency}
+  finance: null,          // {expenses:[], income:[], budgets:{}, friends:[]} — friends = mutual, accepted only
+  directory: [],          // [{name}] everyone who has opened this dashboard (on this device)
+  coldsplits: [],         // [...] only ever created between accepted friends
+  myRequests: [],         // incoming pending friend requests (names) waiting on MY accept/decline
+  pendingInvite: getInviteParam(), // name of whoever's link I opened, from ?invite=
+  page: 'overview',
+  monthDate: new Date()
+};
+
+/* ---------------- helpers ---------------- */
+function esc(s){
+  const d = document.createElement('div');
+  d.innerText = (s===undefined||s===null) ? '' : s;
+  return d.innerHTML;
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function fmt(n){
+  const c = (state.profile && state.profile.currency) || '₹';
+  const num = Number(n)||0;
+  return c + num.toLocaleString('en-IN', {maximumFractionDigits: 0});
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function sameMonth(dateStr, d){
+  const dt = new Date(dateStr+'T00:00:00');
+  return dt.getFullYear()===d.getFullYear() && dt.getMonth()===d.getMonth();
+}
+function initials(name){
+  return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* ---------------- data access (instant — no network) ----------------
+   Every save below happens synchronously against localStorage. The UI
+   updates state + re-renders first, then persists, so nothing ever
+   waits on a save to feel responsive. */
+function loadProfile(){ return lsRead('profile'); }
+function saveProfile(){
+  if(!lsWrite('profile', state.profile)) toast('Could not save profile — try again.');
+}
+function loadFinance(){ return lsRead('finance:'+state.profile.name); }
+function saveFinance(){
+  if(!lsWrite('finance:'+state.profile.name, state.finance)) toast('Could not save — try again.');
+}
+function loadDirectory(){ return lsRead('directory') || []; }
+function saveDirectory(){ lsWrite('directory', state.directory); }
+function loadColdsplits(){ return lsRead('coldsplits') || []; }
+function saveColdsplits(){
+  if(!lsWrite('coldsplits', state.coldsplits)) toast('Could not sync split — try again.');
+}
+function loadRequests(name){ return lsRead('requests:'+name) || []; }
+function saveRequestsFor(name, arr){ lsWrite('requests:'+name, arr); }
+function loadAcceptances(name){ return lsRead('acceptances:'+name) || []; }
+function saveAcceptancesFor(name, arr){ lsWrite('acceptances:'+name, arr); }
+
+/* ---------------- init ---------------- */
+function init(){
+  if(!hasStorage()){
+    document.getElementById('onboard').style.display = 'flex';
+    document.querySelector('.onboard-card').innerHTML =
+      '<h1>Storage unavailable</h1>' +
+      '<p class="sub">This browser is blocking local storage (private/incognito mode, or storage disabled), so entries can\'t be saved. Try a normal browser window.</p>';
+    return;
+  }
+  const profile = loadProfile();
+  if(!profile){
+    document.getElementById('onboard').style.display = 'flex';
+    return;
+  }
+  state.profile = profile;
+  bootApp();
+}
+
+function completeOnboarding(){
+  const name = document.getElementById('ob-name').value.trim();
+  if(!name){ toast('Please enter your name.'); return; }
+  const currency = document.getElementById('ob-currency').value;
+  state.profile = { name, currency };
+  document.getElementById('onboard').style.display = 'none';
+  saveProfile();
+  bootApp();
+}
+
+function bootApp(){
+  document.getElementById('app').style.display = 'flex';
+  let finance = loadFinance();
+  if(!finance){
+    finance = { expenses: [], income: [], budgets: {Food:0,Outing:0,Movies:0,Shopping:0,Miscellaneous:0}, friends: [] };
+  }
+  if(!finance.budgets) finance.budgets = {Food:0,Outing:0,Movies:0,Shopping:0,Miscellaneous:0};
+  if(!finance.friends) finance.friends = [];
+  state.finance = finance;
+
+  state.directory = loadDirectory();
+  if(!state.directory.some(p=>p.name===state.profile.name)){
+    state.directory.push({name: state.profile.name});
+    saveDirectory();
+  }
+  state.coldsplits = loadColdsplits();
+  state.myRequests = loadRequests(state.profile.name);
+
+  processAcceptances();   // anyone who accepted a request I sent gets added locally
+  processPendingInvite(); // if I arrived via someone's link, send them a request
+
+  document.getElementById('brand-name').innerHTML = esc(state.profile.name) + "<em>'s</em> Ledger";
+  goTo('overview');
+}
+
+function processAcceptances(){
+  const acc = loadAcceptances(state.profile.name);
+  if(!acc.length) return;
+  let changed = false;
+  acc.forEach(n=>{
+    if(!state.finance.friends.includes(n)){
+      state.finance.friends.push(n);
+      changed = true;
+    }
+  });
+  if(changed){
+    saveFinance();
+    toast('You are now friends with '+acc.join(', ')+'.');
+  }
+  saveAcceptancesFor(state.profile.name, []); // clear, processed
+}
+
+function processPendingInvite(){
+  const inviter = state.pendingInvite;
+  state.pendingInvite = null;
+  clearInviteParam();
+  if(!inviter || inviter === state.profile.name) return;
+  if(state.finance.friends.includes(inviter)) return;
+  sendFriendRequestQuiet(inviter);
+  toast('Friend request sent to '+inviter+'.');
+}
+
+function syncShared(){
+  state.directory = loadDirectory();
+  state.coldsplits = loadColdsplits();
+  state.myRequests = loadRequests(state.profile.name);
+  processAcceptances();
+  render();
+  toast('Synced.');
+}
+
+/* ---------------- nav ---------------- */
+function goTo(page){
+  state.page = page;
+  render();
+}
+function changeMonth(delta){
+  const d = new Date(state.monthDate);
+  d.setMonth(d.getMonth()+delta);
+  state.monthDate = d;
+  render();
+}
+
+/* ---------------- render root ---------------- */
+function render(){
+  document.querySelectorAll('.navitem').forEach(el=>{
+    el.classList.toggle('active', el.getAttribute('data-page')===state.page);
+  });
+  const badge = document.getElementById('req-badge');
+  if(badge) badge.innerHTML = state.myRequests.length ? `<span class="navbadge">${state.myRequests.length}</span>` : '';
+  const stage = document.getElementById('stage');
+  const pages = {
+    overview: renderOverview,
+    expenses: renderExpenses,
+    income: renderIncome,
+    budget: renderBudget,
+    split: renderSplit,
+    requests: renderRequests,
+    friends: renderFriends,
+    settings: renderSettings
+  };
+  stage.innerHTML = pages[state.page] ? pages[state.page]() : '';
+}
+
+function monthNavHtml(){
+  return `<div class="monthnav">
+    <button onclick="changeMonth(-1)">&#8249;</button>
+    <div class="mlabel">${MONTHS[state.monthDate.getMonth()]} ${state.monthDate.getFullYear()}</div>
+    <button onclick="changeMonth(1)">&#8250;</button>
+  </div>`;
+}
+
+/* ---------------- computed ---------------- */
+function monthExpenses(){ return state.finance.expenses.filter(e=>sameMonth(e.date, state.monthDate)); }
+function monthIncome(){ return state.finance.income.filter(i=>sameMonth(i.date, state.monthDate)); }
+function totalExpense(){ return monthExpenses().reduce((s,e)=>s+Number(e.amount),0); }
+function totalIncome(){ return monthIncome().reduce((s,i)=>s+Number(i.amount),0); }
+function categoryTotals(){
+  const t = {}; Object.keys(CATS).forEach(c=>t[c]=0);
+  monthExpenses().forEach(e=>{ t[e.category] = (t[e.category]||0) + Number(e.amount); });
+  return t;
+}
+function myColdsplitLines(){
+  const me = state.profile.name;
+  const owedToMe = []; const iOwe = [];
+  state.coldsplits.forEach(s=>{
+    if(s.createdBy === me){
+      Object.keys(s.shares).forEach(person=>{
+        owedToMe.push({split:s, person, amount:s.shares[person], settled: !!s.settled[person]});
+      });
+    } else if(s.shares[me] !== undefined){
+      iOwe.push({split:s, person:s.createdBy, amount:s.shares[me], settled: !!s.settled[me]});
+    }
+  });
+  return {owedToMe, iOwe};
+}
+
+/* ---------------- OVERVIEW ---------------- */
+function renderOverview(){
+  const inc = totalIncome(), exp = totalExpense(), rem = inc-exp;
+  const cats = categoryTotals();
+  const maxCat = Math.max(1, ...Object.values(cats));
+  const catRows = Object.keys(CATS).map(c=>{
+    const v = cats[c]||0;
+    return `<div class="barrow">
+      <div class="brhead"><span class="catname">${c}</span><span class="catval">${fmt(v)}</span></div>
+      <div class="bartrack"><div class="barfill" style="width:${(v/maxCat*100).toFixed(0)}%; background:${CATS[c]};"></div></div>
+    </div>`;
+  }).join('');
+
+  const budgets = state.finance.budgets;
+  const budgetRows = Object.keys(CATS).map(c=>{
+    const cap = Number(budgets[c])||0;
+    const spent = cats[c]||0;
+    if(cap<=0) return '';
+    const pct = Math.min(100, (spent/cap*100));
+    const color = pct>=100 ? 'var(--rust)' : (pct>=70 ? 'var(--gold)' : 'var(--sage)');
+    return `<div class="barrow">
+      <div class="brhead"><span class="catname">${c}</span><span class="catval">${fmt(spent)} / ${fmt(cap)}</span></div>
+      <div class="bartrack"><div class="barfill" style="width:${pct.toFixed(0)}%; background:${color};"></div></div>
+    </div>`;
+  }).join('');
+  const hasBudget = Object.values(budgets).some(v=>Number(v)>0);
+
+  const recent = [...monthExpenses().map(e=>({...e,type:'expense'})), ...monthIncome().map(i=>({...i,type:'income'}))]
+    .sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,6);
+  const recentHtml = recent.length ? `<ul class="txn-list">${recent.map(r=>`
+    <li class="txn-row">
+      <div class="txn-left">
+        <span class="txn-cat">${esc(r.type==='income' ? r.source : r.category)}</span>
+        ${r.note ? `<span class="txn-note">${esc(r.note)}</span>` : ''}
+      </div>
+      <div class="txn-right">
+        <span class="txn-date">${r.date.slice(5)}</span>
+        <span class="txn-amt ${r.type==='income'?'pos':'neg'}">${r.type==='income'?'+':'−'}${fmt(r.amount)}</span>
+      </div>
+    </li>`).join('')}</ul>` : `<div class="empty">No activity yet this month — log an expense or income to begin.</div>`;
+
+  const {owedToMe, iOwe} = myColdsplitLines();
+  const pending = [...owedToMe.filter(x=>!x.settled), ...iOwe.filter(x=>!x.settled)];
+  const pendingHtml = pending.length ? pending.slice(0,4).map(p=>{
+    const isOwedToMe = owedToMe.includes(p);
+    return `<div class="split-person-row">
+      <span>${esc(p.split.title)} — ${isOwedToMe? esc(p.person)+' owes you' : 'you owe '+esc(p.person)}</span>
+      <span class="pill ${isOwedToMe?'owed':'owe'}">${fmt(p.amount)}</span>
+    </div>`;
+  }).join('') : `<div class="empty">No pending cold splits.</div>`;
+
+  return `
+  <div class="stage-head">
+    <div>
+      <h2>Good to see you, ${esc(state.profile.name)}</h2>
+      <div class="desc">Here's where things stand this month.</div>
+    </div>
+    ${monthNavHtml()}
+  </div>
+
+  <div class="ledger-strip">
+    <div class="ledger-col income"><div class="lbl">Income</div><div class="amt">${fmt(inc)}</div></div>
+    <div class="ledger-col spent"><div class="lbl">Spent</div><div class="amt">${fmt(exp)}</div></div>
+    <div class="ledger-col remain"><div class="lbl">Remaining</div><div class="amt">${fmt(rem)}</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3>Spending by category</h3>
+      ${catRows}
+    </div>
+    <div class="panel">
+      <h3>Budget status <span class="n">${hasBudget?'':'not set'}</span></h3>
+      ${hasBudget ? budgetRows : `<div class="empty">Set monthly caps in Budget to track progress here.</div>`}
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3>Recent activity</h3>
+      ${recentHtml}
+    </div>
+    <div class="panel">
+      <h3>Cold split, pending</h3>
+      ${pendingHtml}
+    </div>
+  </div>
+  `;
+}
+
+/* ---------------- EXPENSES ---------------- */
+function renderExpenses(){
+  const list = monthExpenses().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const rows = list.length ? `<ul class="txn-list">${list.map(e=>`
+    <li class="txn-row">
+      <div class="txn-left">
+        <span class="txn-cat">${esc(e.category)}</span>
+        ${e.note ? `<span class="txn-note">${esc(e.note)}</span>` : ''}
+      </div>
+      <div class="txn-right">
+        <span class="txn-date">${e.date.slice(5)}</span>
+        <span class="txn-amt neg">−${fmt(e.amount)}</span>
+        <button class="xbtn" onclick="deleteExpense('${e.id}')" title="Delete">&times;</button>
+      </div>
+    </li>`).join('')}</ul>` : `<div class="empty">No expenses logged for this month yet.</div>`;
+
+  return `
+  <div class="stage-head">
+    <div><h2>Expenses</h2><div class="desc">Food, outings, movies, shopping and the rest.</div></div>
+    ${monthNavHtml()}
+  </div>
+  <div class="panel">
+    <h3>Add an expense</h3>
+    <div class="formrow">
+      <div class="field"><label>Category</label>
+        <select id="exp-cat">${Object.keys(CATS).map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Amount</label><input type="number" id="exp-amt" min="0" step="1" placeholder="0"></div>
+      <div class="field"><label>Note (optional)</label><input type="text" id="exp-note" placeholder="e.g. Lunch with friends" maxlength="60"></div>
+      <div class="field"><label>Date</label><input type="date" id="exp-date" value="${todayStr()}"></div>
+      <div class="actions"><button class="btn" onclick="addExpense()">Add expense</button></div>
+    </div>
+  </div>
+  <div class="panel"><h3>This month <span class="n">${fmt(totalExpense())} total</span></h3>${rows}</div>
+  `;
+}
+function addExpense(){
+  const category = document.getElementById('exp-cat').value;
+  const amount = parseFloat(document.getElementById('exp-amt').value);
+  const note = document.getElementById('exp-note').value.trim();
+  const date = document.getElementById('exp-date').value || todayStr();
+  if(!amount || amount<=0){ toast('Enter an amount greater than 0.'); return; }
+  state.finance.expenses.push({id: uid(), category, amount, note, date});
+  saveFinance();  // synchronous — already saved by the time we render
+  render();
+  toast('Expense added.');
+}
+function deleteExpense(id){
+  state.finance.expenses = state.finance.expenses.filter(e=>e.id!==id);
+  saveFinance();
+  render();
+}
+
+/* ---------------- INCOME ---------------- */
+function renderIncome(){
+  const list = monthIncome().sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const rows = list.length ? `<ul class="txn-list">${list.map(i=>`
+    <li class="txn-row">
+      <div class="txn-left">
+        <span class="txn-cat">${esc(i.source)}</span>
+        ${i.note ? `<span class="txn-note">${esc(i.note)}</span>` : ''}
+      </div>
+      <div class="txn-right">
+        <span class="txn-date">${i.date.slice(5)}</span>
+        <span class="txn-amt pos">+${fmt(i.amount)}</span>
+        <button class="xbtn" onclick="deleteIncome('${i.id}')" title="Delete">&times;</button>
+      </div>
+    </li>`).join('')}</ul>` : `<div class="empty">No income logged for this month yet.</div>`;
+
+  return `
+  <div class="stage-head">
+    <div><h2>Income</h2><div class="desc">Pocket money and everything else coming in.</div></div>
+    ${monthNavHtml()}
+  </div>
+  <div class="panel">
+    <h3>Add income</h3>
+    <div class="formrow">
+      <div class="field"><label>Source</label>
+        <select id="inc-src">${INCOME_SOURCES.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Amount</label><input type="number" id="inc-amt" min="0" step="1" placeholder="0"></div>
+      <div class="field"><label>Note (optional)</label><input type="text" id="inc-note" placeholder="e.g. From dad" maxlength="60"></div>
+      <div class="field"><label>Date</label><input type="date" id="inc-date" value="${todayStr()}"></div>
+      <div class="actions"><button class="btn" onclick="addIncome()">Add income</button></div>
+    </div>
+  </div>
+  <div class="panel"><h3>This month <span class="n">${fmt(totalIncome())} total</span></h3>${rows}</div>
+  `;
+}
+function addIncome(){
+  const source = document.getElementById('inc-src').value;
+  const amount = parseFloat(document.getElementById('inc-amt').value);
+  const note = document.getElementById('inc-note').value.trim();
+  const date = document.getElementById('inc-date').value || todayStr();
+  if(!amount || amount<=0){ toast('Enter an amount greater than 0.'); return; }
+  state.finance.income.push({id: uid(), source, amount, note, date});
+  saveFinance();
+  render();
+  toast('Income added.');
+}
+function deleteIncome(id){
+  state.finance.income = state.finance.income.filter(i=>i.id!==id);
+  saveFinance();
+  render();
+}
+
+/* ---------------- BUDGET ---------------- */
+function renderBudget(){
+  const cats = categoryTotals();
+  const budgets = state.finance.budgets;
+  const rows = Object.keys(CATS).map(c=>{
+    const cap = Number(budgets[c])||0;
+    const spent = cats[c]||0;
+    const pct = cap>0 ? Math.min(100, spent/cap*100) : 0;
+    const color = pct>=100 ? 'var(--rust)' : (pct>=70 ? 'var(--gold)' : 'var(--sage)');
+    const remain = cap - spent;
+    return `<tr>
+      <td>${c}</td>
+      <td><input type="number" min="0" step="1" value="${cap||''}" placeholder="0" style="width:110px;" onchange="setBudget('${c}', this.value)"></td>
+      <td>${fmt(spent)}</td>
+      <td style="color:${remain<0?'var(--rust)':'var(--paper-dim)'}">${fmt(remain)}</td>
+      <td style="min-width:120px;"><div class="bartrack"><div class="barfill" style="width:${pct}%; background:${color};"></div></div></td>
+    </tr>`;
+  }).join('');
+
+  return `
+  <div class="stage-head">
+    <div><h2>Budget</h2><div class="desc">Set a monthly cap per category and track it live.</div></div>
+    ${monthNavHtml()}
+  </div>
+  <div class="panel">
+    <h3>Monthly caps — ${MONTHS[state.monthDate.getMonth()]}</h3>
+    <table class="table">
+      <tr><th>Category</th><th>Cap</th><th>Spent</th><th>Remaining</th><th>Progress</th></tr>
+      ${rows}
+    </table>
+  </div>
+  `;
+}
+function setBudget(cat, val){
+  state.finance.budgets[cat] = parseFloat(val)||0;
+  saveFinance();
+  render();
+  toast('Budget updated.');
+}
+
+/* ---------------- COLD SPLIT (accepted friends only) ---------------- */
+let splitSelected = new Set();
+function renderSplit(){
+  const friends = state.finance.friends; // mutual/accepted only
+  const {owedToMe, iOwe} = myColdsplitLines();
+
+  const chipHtml = friends.length ? friends.map(f=>`
+    <label class="chip ${splitSelected.has(f)?'checked':''}" onclick="toggleSplitPerson(event,'${esc(f)}')">
+      <input type="checkbox" ${splitSelected.has(f)?'checked':''} style="display:none;"> ${esc(f)}
+    </label>`).join('') : `<div class="empty">You can split costs once a friend request is accepted — see Friend Requests.</div>`;
+
+  const owedHtml = owedToMe.length ? owedToMe.map(x=>`
+    <div class="split-card">
+      <div class="split-top">
+        <div><div class="split-title">${esc(x.split.title)}</div><div class="split-meta">${esc(x.person)} • ${x.split.category||'General'} • ${x.split.createdAt}</div></div>
+        <span class="pill ${x.settled?'settled':'owed'}">${x.settled?'Settled':'Owed to you'}</span>
+      </div>
+      <div class="split-people">
+        <div class="split-person-row">
+          <span>${esc(x.person)}'s share</span>
+          <span style="display:flex; align-items:center; gap:10px;">
+            <b>${fmt(x.amount)}</b>
+            ${!x.settled ? `<button class="btn small ghost" onclick="toggleSettled('${x.split.id}','${esc(x.person)}')">Mark received</button>` : ''}
+          </span>
+        </div>
+      </div>
+    </div>`).join('') : `<div class="empty">You haven't paid for any shared expenses yet.</div>`;
+
+  const oweHtml = iOwe.length ? iOwe.map(x=>`
+    <div class="split-card">
+      <div class="split-top">
+        <div><div class="split-title">${esc(x.split.title)}</div><div class="split-meta">Paid by ${esc(x.person)} • ${x.split.category||'General'} • ${x.split.createdAt}</div></div>
+        <span class="pill ${x.settled?'settled':'owe'}">${x.settled?'Settled':'You owe'}</span>
+      </div>
+      <div class="split-people">
+        <div class="split-person-row">
+          <span>Your share</span>
+          <span style="display:flex; align-items:center; gap:10px;">
+            <b>${fmt(x.amount)}</b>
+            ${!x.settled ? `<button class="btn small ghost" onclick="toggleSettled('${x.split.id}','${state.profile.name}')">Mark paid</button>` : ''}
+          </span>
+        </div>
+      </div>
+    </div>`).join('') : `<div class="empty">You don't owe anyone right now.</div>`;
+
+  return `
+  <div class="stage-head">
+    <div><h2>Cold Split</h2><div class="desc">Share a cost with accepted friends — everyone sees only their own line.</div></div>
+    <button class="btn ghost small" onclick="syncShared()">Sync</button>
+  </div>
+
+  <div class="panel">
+    <h3>New split — you paid, they owe you</h3>
+    <div class="formrow" style="margin-bottom:14px;">
+      <div class="field"><label>What was it for</label><input type="text" id="sp-title" placeholder="e.g. Movie night" maxlength="40"></div>
+      <div class="field"><label>Category</label>
+        <select id="sp-cat"><option value="">General</option>${Object.keys(CATS).map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Total amount</label><input type="number" id="sp-amt" min="0" step="1" placeholder="0"></div>
+    </div>
+    <div class="field">
+      <label>Split with (equally, including you) — accepted friends only</label>
+      <div>${chipHtml}</div>
+    </div>
+    <button class="btn" onclick="createSplit()">Create split</button>
+  </div>
+
+  <div class="grid2">
+    <div class="panel"><h3>Owed to you</h3>${owedHtml}</div>
+    <div class="panel"><h3>You owe</h3>${oweHtml}</div>
+  </div>
+  `;
+}
+function toggleSplitPerson(ev, name){
+  ev.preventDefault();
+  if(splitSelected.has(name)) splitSelected.delete(name); else splitSelected.add(name);
+  render();
+}
+function createSplit(){
+  const title = document.getElementById('sp-title').value.trim();
+  const category = document.getElementById('sp-cat').value;
+  const total = parseFloat(document.getElementById('sp-amt').value);
+  const people = Array.from(splitSelected).filter(p=>state.finance.friends.includes(p)); // guard: accepted friends only
+  if(!title){ toast('Give the split a short title.'); return; }
+  if(!total || total<=0){ toast('Enter a total amount.'); return; }
+  if(people.length===0){ toast('Pick at least one accepted friend to split with.'); return; }
+  const shareAmount = Math.round((total / (people.length+1)) * 100) / 100;
+  const shares = {}; const settled = {};
+  people.forEach(p=>{ shares[p]=shareAmount; settled[p]=false; });
+  state.coldsplits.push({
+    id: uid(), title, category, total, createdBy: state.profile.name,
+    shares, settled, createdAt: todayStr()
+  });
+  saveColdsplits();
+  splitSelected = new Set();
+  document.getElementById('sp-title').value='';
+  document.getElementById('sp-amt').value='';
+  render();
+  toast('Split created — friends will see it when they sync.');
+}
+function toggleSettled(splitId, person){
+  const s = state.coldsplits.find(x=>x.id===splitId);
+  if(!s) return;
+  s.settled[person] = !s.settled[person];
+  saveColdsplits();
+  render();
+}
+
+/* ---------------- FRIEND REQUESTS (request → accept → mutual) ----------------
+   This is the flow behind the invite link:
+   1. You share your invite link (Friends page). It just carries your name
+      in the URL — nothing is shared yet.
+   2. Whoever opens it gets their own ledger, and the app quietly sends
+      YOU a friend request (they don't need to do anything else).
+   3. You see that request here, on this page, and choose Accept or Decline.
+   4. Once accepted, you're mutual friends and can Cold Split with them —
+      hit Sync on either the Cold Split or Friends page to pull the latest. */
+function sendFriendRequestQuiet(targetName){
+  const theirRequests = loadRequests(targetName);
+  if(!theirRequests.includes(state.profile.name)){
+    theirRequests.push(state.profile.name);
+    saveRequestsFor(targetName, theirRequests);
+  }
+}
+function sendFriendRequest(targetName){
+  if(targetName === state.profile.name) return;
+  if(state.finance.friends.includes(targetName)){ toast('Already friends.'); return; }
+  sendFriendRequestQuiet(targetName);
+  toast('Friend request sent to '+targetName+'.');
+}
+function addFriendManual(){
+  const name = document.getElementById('fr-name').value.trim();
+  if(!name){ toast('Enter a name.'); return; }
+  if(name===state.profile.name){ toast("That's you."); return; }
+  sendFriendRequest(name);
+  document.getElementById('fr-name').value='';
+}
+function removeFriend(name){
+  state.finance.friends = state.finance.friends.filter(f=>f!==name);
+  saveFinance();
+  render();
+}
+function acceptRequest(name){
+  if(!state.finance.friends.includes(name)){
+    state.finance.friends.push(name);
+  }
+  state.myRequests = state.myRequests.filter(n=>n!==name);
+  saveFinance();
+  saveRequestsFor(state.profile.name, state.myRequests);
+  const theirAcc = loadAcceptances(name);
+  if(!theirAcc.includes(state.profile.name)){
+    theirAcc.push(state.profile.name);
+    saveAcceptancesFor(name, theirAcc);
+  }
+  render();
+  toast(name+' is now your friend.');
+}
+function declineRequest(name){
+  state.myRequests = state.myRequests.filter(n=>n!==name);
+  saveRequestsFor(state.profile.name, state.myRequests);
+  render();
+}
+
+function renderRequests(){
+  const myFriends = state.finance.friends;
+  const incoming = state.myRequests.filter(n=>!myFriends.includes(n));
+
+  const requestRows = incoming.length ? incoming.map(n=>`
+    <div class="request-row">
+      <span><span class="avatar">${initials(n)}</span>${esc(n)} wants to be friends</span>
+      <span style="display:flex; gap:8px;">
+        <button class="btn small" onclick="acceptRequest('${esc(n)}')">Accept</button>
+        <button class="btn small ghost" onclick="declineRequest('${esc(n)}')">Decline</button>
+      </span>
+    </div>`).join('') : `<div class="empty">No pending friend requests. Share your invite link from the Friends page to get some.</div>`;
+
+  return `
+  <div class="stage-head">
+    <div><h2>Friend Requests</h2><div class="desc">People who opened your invite link, waiting on your accept.</div></div>
+    <button class="btn ghost small" onclick="syncShared()">Sync</button>
+  </div>
+
+  <div class="info-note">
+    Sharing your invite link only tells the other person your name and lets them send <b>you</b> a request — nothing about your money is visible until you accept them here, and even then they only ever see the cold splits you create together.
+  </div>
+
+  <div class="panel">
+    <h3>Pending requests <span class="n">${incoming.length}</span></h3>
+    ${requestRows}
+  </div>
+  `;
+}
+
+function renderFriends(){
+  const myFriends = state.finance.friends; // mutual only
+  const others = state.directory.filter(p=>p.name!==state.profile.name && !myFriends.includes(p.name));
+
+  const friendRows = myFriends.length ? myFriends.map(f=>`
+    <div class="friend-row">
+      <span><span class="avatar">${initials(f)}</span>${esc(f)}</span>
+      <button class="btn small ghost" onclick="removeFriend('${esc(f)}')">Remove</button>
+    </div>`).join('') : `<div class="empty">No accepted friends yet — invite someone, or check Friend Requests.</div>`;
+
+  const dirRows = others.length ? others.map(p=>`
+    <div class="friend-row">
+      <span><span class="avatar">${initials(p.name)}</span>${esc(p.name)}</span>
+      <button class="btn small" onclick="sendFriendRequest('${esc(p.name)}')">Send request</button>
+    </div>`).join('') : `<div class="empty">No one else has opened this dashboard on this device yet.</div>`;
+
+  return `
+  <div class="stage-head">
+    <div><h2>Friends</h2><div class="desc">Cold split only works once a friend request is accepted on both sides.</div></div>
+    <button class="btn ghost small" onclick="syncShared()">Sync</button>
+  </div>
+
+  <div class="panel">
+    <h3>Invite a friend</h3>
+    <div class="invite-box">
+      <input type="text" readonly value="${esc(inviteLink())}" onclick="this.select()">
+      <button class="btn small" onclick="copyInviteLink()">Copy link</button>
+    </div>
+    <p style="font-size:12.5px; color:var(--paper-faint); margin:0;">When someone opens this link, it sends <b>you</b> a friend request — check Friend Requests to accept it.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="panel"><h3>Your friends <span class="n">accepted only</span></h3>${friendRows}</div>
+    <div class="panel">
+      <h3>Add by name</h3>
+      <div class="formrow" style="margin-bottom:16px;">
+        <div class="field"><label>Exact name</label><input type="text" id="fr-name" placeholder="e.g. Ramya"></div>
+        <div class="actions"><button class="btn" onclick="addFriendManual()">Send request</button></div>
+      </div>
+      <h3>People on this device</h3>
+      ${dirRows}
+    </div>
+  </div>
+  `;
+}
+
+/* ---------------- SETTINGS ---------------- */
+function renderSettings(){
+  return `
+  <div class="stage-head"><div><h2>Settings</h2><div class="desc">Your profile and how this dashboard shares data.</div></div></div>
+  <div class="panel" style="max-width:480px;">
+    <h3>Profile</h3>
+    <div class="field"><label>Display name</label><input type="text" id="set-name" value="${esc(state.profile.name)}" maxlength="24"></div>
+    <div class="field"><label>Currency</label>
+      <select id="set-currency">
+        ${['₹','$','€','£'].map(c=>`<option value="${c}" ${state.profile.currency===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <button class="btn" onclick="saveSettings()">Save changes</button>
+  </div>
+  <div class="panel" style="max-width:480px;">
+    <h3>How your data is shared</h3>
+    <p style="font-size:13.5px; color:var(--paper-dim); line-height:1.6; margin:0;">
+      Expenses, income and budgets are stored on this device only, under your name.
+      Friend requests, acceptances, and cold splits are stored so that the friends
+      involved can see their own line when they hit Sync — this is app-level
+      filtering in your browser's local storage, not a real server, so it only
+      works reliably when everyone is testing from the same browser/device. To make
+      this work across different people's own computers, connect the storage
+      functions near the top of this file to a small shared backend.
+    </p>
+  </div>
+  `;
+}
+function saveSettings(){
+  const name = document.getElementById('set-name').value.trim();
+  const currency = document.getElementById('set-currency').value;
+  if(!name){ toast('Name cannot be empty.'); return; }
+  const oldName = state.profile.name;
+  state.profile = { name, currency };
+  saveProfile();
+  if(oldName !== name){
+    const idx = state.directory.findIndex(p=>p.name===oldName);
+    if(idx>-1){ state.directory[idx].name = name; saveDirectory(); }
+    state.finance.friends = state.finance.friends.map(f=>f===oldName?name:f);
+    saveFinance();
+  }
+  document.getElementById('brand-name').innerHTML = esc(name) + "<em>'s</em> Ledger";
+  render();
+  toast('Settings saved.');
+}
+
+/* ---------------- boot ---------------- */
+init();
+</script>
+</body>
+</html>
